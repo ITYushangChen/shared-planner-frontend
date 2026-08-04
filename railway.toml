@@ -1,0 +1,11 @@
+# Railway: set Root Directory to services/api in the dashboard,
+# or use this when the service root is the backend repo.
+[build]
+builder = "NIXPACKS"
+buildCommand = "cd services/api && npm install && npm run build"
+
+[deploy]
+startCommand = "cd services/api && npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"

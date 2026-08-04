@@ -1,0 +1,18 @@
+# Env / secrets
+.env
+.env.*
+!.env*.example
+
+# Local supabase
+.branches
+.temp
+
+# API
+services/api/node_modules/
+services/api/dist/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
