@@ -1,0 +1,25 @@
+# Minimal Supabase local config for ShareTodo AI
+# Docs: https://supabase.com/docs/guides/cli/config
+
+project_id = "sharetodo-ai"
+
+[api]
+enabled = true
+port = 54321
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
