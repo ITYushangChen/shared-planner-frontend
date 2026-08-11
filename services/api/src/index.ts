@@ -5,6 +5,7 @@ import { aiConflictSuggestRouter } from "./routes/ai-conflict-suggest";
 import { aiCreateTodosRouter } from "./routes/ai-create-todos";
 import { aiReorderRouter } from "./routes/ai-reorder";
 import { aiScheduleRouter } from "./routes/ai-schedule";
+import { aiReportPlainRouter } from "./routes/ai-report-plain";
 import { dailySummaryRouter } from "./routes/daily-summary";
 
 assertRuntimeEnv();
@@ -31,6 +32,7 @@ app.use("/ai", aiCreateTodosRouter);
 app.use("/ai", aiScheduleRouter);
 app.use("/ai", aiReorderRouter);
 app.use("/ai", aiConflictSuggestRouter);
+app.use("/ai", aiReportPlainRouter);
 app.use("/ai", dailySummaryRouter);
 app.use(dailySummaryRouter);
 

@@ -20,6 +20,8 @@ ENV PORT=8080
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+# AI 任务名称改写规则（运行时读取 renwumingcheng）
+COPY services/api/renwumingcheng ./renwumingcheng
 
 EXPOSE 8080
 CMD ["npm", "start"]
