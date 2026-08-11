@@ -1,26 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 中性灰主色 */
+  --background: #f5f6f8;
+  --foreground: #333943;
+
+  --brand: #b7bbbd;
+  --brand-hover: #9ea3a6;
+  --brand-soft: #eef0f1;
+  --brand-ink: #3a3f42;
+  --brand-rail: #b7bbbd;
+
+  --pri-high: #e5a54b;
+  --pri-medium: #b7bbbd;
+  --pri-low: #5cb88a;
+
+  --status-todo: #e85d5d;
+  --status-progress: #4a9eda;
+  --status-done: #3db87a;
+
+  --success: #3db87a;
+  --success-soft: #e8f6ef;
+
+  --surface: #ffffff;
+  --surface-muted: #f5f6f8;
+  --border-muted: #e8eaed;
+  --text-muted: #9aa3ad;
+  --text-secondary: #6b7380;
+
+  --radius-ui: 0.5rem;
+  --shadow-card: 0 1px 2px rgba(58, 63, 66, 0.04);
+  --shadow-card-hover: 0 2px 8px rgba(183, 187, 189, 0.28);
+
+  --ease-ui: 200ms ease;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-pri-high: var(--pri-high);
+  --color-pri-medium: var(--pri-medium);
+  --color-pri-low: var(--pri-low);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  min-height: 100%;
+  background: #ffffff;
+  color: var(--foreground);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
