@@ -1,5 +1,11 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+import ws from "ws";
 import { config } from "../config";
+
+/** Node（Railway node:20）无原生 WebSocket，需提供 ws 供 supabase-js Realtime 使用 */
+const realtimeOpts = {
+  transport: ws as unknown as typeof WebSocket,
+};
 
 export function createUserClient(accessToken: string): SupabaseClient {
   return createClient(config.supabaseUrl, config.supabaseAnonKey, {
@@ -10,6 +16,7 @@ export function createUserClient(accessToken: string): SupabaseClient {
       persistSession: false,
       autoRefreshToken: false,
     },
+    realtime: realtimeOpts,
   });
 }
 
@@ -19,6 +26,7 @@ export function createAdminClient(): SupabaseClient {
       persistSession: false,
       autoRefreshToken: false,
     },
+    realtime: realtimeOpts,
   });
 }
 

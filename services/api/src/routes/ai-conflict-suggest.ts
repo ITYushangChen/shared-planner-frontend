@@ -1,16 +1,25 @@
 import { Router } from "express";
 import { z } from "zod";
 import { chatJson } from "../lib/deepseek";
-import { assertSpaceMember, listSpaceMembers } from "../lib/space";
+import {
+  assertSpaceMember,
+  listSpaceMembers,
+  listUserSpaceIds,
+} from "../lib/space";
 import { createAdminClient } from "../lib/supabase";
 import type { AuthedRequest } from "../middleware/auth";
 import { requireAuth } from "../middleware/auth";
 
-const bodySchema = z.object({
-  space_id: z.string().uuid(),
-  user_id: z.string().uuid().optional(),
-  confirm: z.boolean().optional().default(false),
-});
+const bodySchema = z
+  .object({
+    space_id: z.string().uuid().optional(),
+    all_spaces: z.boolean().optional().default(false),
+    user_id: z.string().uuid().optional(),
+    confirm: z.boolean().optional().default(false),
+  })
+  .refine((d) => d.all_spaces || d.space_id, {
+    message: "需要 space_id 或 all_spaces",
+  });
 
 type MoveSuggestion = {
   todo_id: string;
@@ -32,21 +41,36 @@ aiConflictSuggestRouter.post(
       const auth = (req as AuthedRequest).auth!;
       const body = bodySchema.parse(req.body);
       const admin = createAdminClient();
-      await assertSpaceMember(admin, body.space_id, auth.user.id);
-      const members = await listSpaceMembers(admin, body.space_id);
+
+      const spaceIds = body.all_spaces
+        ? await listUserSpaceIds(admin, auth.user.id)
+        : [body.space_id!];
+
+      if (spaceIds.length === 0) {
+        res.json({ conflicts: [], suggestions: [], message: "没有可访问的空间" });
+        return;
+      }
+
+      if (!body.all_spaces) {
+        await assertSpaceMember(admin, body.space_id!, auth.user.id);
+      }
 
       const targetUserId = body.user_id || auth.user.id;
-      if (!members.some((m) => m.user_id === targetUserId)) {
-        res.status(400).json({ error: "user_id is not in this space" });
-        return;
+
+      if (!body.all_spaces) {
+        const members = await listSpaceMembers(admin, body.space_id!);
+        if (!members.some((m) => m.user_id === targetUserId)) {
+          res.status(400).json({ error: "user_id is not in this space" });
+          return;
+        }
       }
 
       const { data: todos, error } = await admin
         .from("todos")
         .select(
-          "id, title, priority, start_at, end_at, status, todo_assignees!inner(user_id)",
+          "id, space_id, title, priority, start_at, end_at, status, todo_assignees!inner(user_id)",
         )
-        .eq("space_id", body.space_id)
+        .in("space_id", spaceIds)
         .eq("todo_assignees.user_id", targetUserId)
         .neq("status", "done")
         .not("start_at", "is", null)
@@ -73,7 +97,7 @@ aiConflictSuggestRouter.post(
       }
 
       const parsed = await chatJson<{ suggestions: MoveSuggestion[] }>({
-        system: `你是日程冲突解决助手。给定某人的冲突待办，建议把较低优先级任务挪到空闲时段。
+        system: `你是日程冲突解决助手。给定某人的冲突待办（可跨空间），建议把较低优先级任务挪到空闲时段。
 只输出 JSON：
 {
   "suggestions": [
@@ -89,7 +113,8 @@ aiConflictSuggestRouter.post(
   ]
 }`,
         user: JSON.stringify({
-          member: members.find((m) => m.user_id === targetUserId),
+          target_user_id: targetUserId,
+          scope: body.all_spaces ? "all_spaces" : "single_space",
           todos: scheduled,
           conflict_pairs: conflicts,
           now: new Date().toISOString(),
@@ -107,6 +132,8 @@ aiConflictSuggestRouter.post(
 
       const applied: string[] = [];
       for (const s of suggestions) {
+        const todo = scheduled.find((t) => t.id === s.todo_id);
+        if (!todo) continue;
         const { error: upErr } = await admin
           .from("todos")
           .update({
@@ -114,16 +141,16 @@ aiConflictSuggestRouter.post(
             end_at: s.to_end_at,
           })
           .eq("id", s.todo_id)
-          .eq("space_id", body.space_id);
+          .eq("space_id", todo.space_id);
         if (upErr) throw new Error(upErr.message);
         applied.push(s.todo_id);
       }
 
       await admin.from("ai_actions").insert({
-        space_id: body.space_id,
+        space_id: spaceIds[0],
         user_id: auth.user.id,
         action_type: "conflict_suggest",
-        payload: { conflicts, suggestions },
+        payload: { conflicts, suggestions, all_spaces: body.all_spaces },
         result_todo_ids: applied,
         status: "applied",
       });

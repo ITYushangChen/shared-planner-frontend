@@ -125,6 +125,7 @@ CREATE TABLE public.todos (
   end_at        TIMESTAMPTZ,
   is_all_day    BOOLEAN NOT NULL DEFAULT FALSE,
   due_at        TIMESTAMPTZ,
+  duration_minutes INTEGER CHECK (duration_minutes IS NULL OR duration_minutes > 0),
 
   -- 标记完成
   completed_by  UUID REFERENCES public.profiles(id),
@@ -375,7 +376,10 @@ CREATE POLICY "profiles_update_own"
 -- spaces
 CREATE POLICY "spaces_select_member"
   ON public.spaces FOR SELECT TO authenticated
-  USING (public.is_space_member(id));
+  USING (
+    owner_id = auth.uid()
+    OR public.is_space_member(id)
+  );
 
 CREATE POLICY "spaces_insert_auth"
   ON public.spaces FOR INSERT TO authenticated
@@ -685,7 +689,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.transfer_space_ownership(UUID, UUID) TO authenticated;
 
--- 日程冲突检测（同一指派人时间重叠）
+-- 日程冲突检测（同一指派人时间重叠，跨空间）
 CREATE OR REPLACE FUNCTION public.check_schedule_conflicts(
   p_space_id UUID,
   p_user_id UUID,
@@ -701,14 +705,31 @@ SET search_path = public
 AS $$
   SELECT t.*
   FROM public.todos t
-  JOIN public.todo_assignees a ON a.todo_id = t.id
-  WHERE t.space_id = p_space_id
-    AND a.user_id = p_user_id
-    AND t.status <> 'done'
+  WHERE t.status <> 'done'
     AND t.time_range IS NOT NULL
     AND t.time_range && tstzrange(p_start_at, p_end_at, '[)')
     AND (p_exclude_todo_id IS NULL OR t.id <> p_exclude_todo_id)
-    AND public.is_space_member(p_space_id);
+    AND (auth.uid() IS NULL OR public.is_space_member(p_space_id))
+    AND EXISTS (
+      SELECT 1
+      FROM public.space_members sm
+      WHERE sm.space_id = t.space_id
+        AND sm.user_id = p_user_id
+    )
+    AND (
+      EXISTS (
+        SELECT 1
+        FROM public.todo_assignees a
+        WHERE a.todo_id = t.id
+          AND a.user_id = p_user_id
+      )
+      OR (
+        t.creator_id = p_user_id
+        AND NOT EXISTS (
+          SELECT 1 FROM public.todo_assignees a WHERE a.todo_id = t.id
+        )
+      )
+    );
 $$;
 
 GRANT EXECUTE ON FUNCTION public.check_schedule_conflicts(UUID, UUID, TIMESTAMPTZ, TIMESTAMPTZ, UUID)

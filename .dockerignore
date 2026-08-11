@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.branches
+.temp
+需求文档化
+*.md
+!services/api/README.md

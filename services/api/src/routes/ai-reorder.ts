@@ -1,15 +1,20 @@
 import { Router } from "express";
 import { z } from "zod";
-import { assertSpaceMember } from "../lib/space";
+import { assertSpaceMember, listUserSpaceIds } from "../lib/space";
 import { createAdminClient } from "../lib/supabase";
 import type { AuthedRequest } from "../middleware/auth";
 import { requireAuth } from "../middleware/auth";
 import { computeSortScore } from "../services/todos";
 
-const bodySchema = z.object({
-  space_id: z.string().uuid(),
-  persist: z.boolean().optional().default(true),
-});
+const bodySchema = z
+  .object({
+    space_id: z.string().uuid().optional(),
+    all_spaces: z.boolean().optional().default(false),
+    persist: z.boolean().optional().default(true),
+  })
+  .refine((d) => d.all_spaces || d.space_id, {
+    message: "需要 space_id 或 all_spaces",
+  });
 
 export const aiReorderRouter = Router();
 
@@ -18,12 +23,24 @@ aiReorderRouter.post("/reorder", requireAuth, async (req, res) => {
     const auth = (req as AuthedRequest).auth!;
     const body = bodySchema.parse(req.body);
     const admin = createAdminClient();
-    await assertSpaceMember(admin, body.space_id, auth.user.id);
+
+    const spaceIds = body.all_spaces
+      ? await listUserSpaceIds(admin, auth.user.id)
+      : [body.space_id!];
+
+    if (spaceIds.length === 0) {
+      res.json({ todos: [] });
+      return;
+    }
+
+    if (!body.all_spaces) {
+      await assertSpaceMember(admin, body.space_id!, auth.user.id);
+    }
 
     const { data: todos, error } = await admin
       .from("todos")
-      .select("id, title, priority, status, due_at, start_at, sort_score")
-      .eq("space_id", body.space_id);
+      .select("id, space_id, title, priority, status, due_at, start_at, sort_score")
+      .in("space_id", spaceIds);
 
     if (error) throw new Error(error.message);
 
@@ -44,10 +61,11 @@ aiReorderRouter.post("/reorder", requireAuth, async (req, res) => {
       }
 
       await admin.from("ai_actions").insert({
-        space_id: body.space_id,
+        space_id: spaceIds[0],
         user_id: auth.user.id,
         action_type: "reorder",
         payload: {
+          all_spaces: body.all_spaces,
           order: ranked.map((t) => ({ id: t.id, sort_score: t.sort_score })),
         },
         result_todo_ids: ranked.map((t) => t.id),

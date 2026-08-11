@@ -42,14 +42,18 @@ npm run dev
 
 ## Railway 部署
 
+推荐：**仓库根目录部署**（已提供根目录 `Dockerfile`，避免 `npm: command not found`）。
+
 1. New Project → Deploy from GitHub（backend 仓）
-2. **Root Directory** = `services/api`
-3. Build：`npm install && npm run build`
-4. Start：`npm start`
-5. 配置 Variables（见 `.env.example`）
-6. `CORS_ORIGIN` 填 Vercel 前端域名
+2. **Root Directory 留空**（不要填 `services/api`，除非你改用子目录 Nixpacks）
+3. 确认使用仓库根 `Dockerfile` / `railway.toml`（builder = DOCKERFILE）
+4. 配置 Variables（见 `.env.example`）
+5. `CORS_ORIGIN` 填 Vercel 前端域名
+6. Settings → Networking → Generate Domain
 7. Cron Job（可选）：每天请求  
    `POST /jobs/daily-summary`，Header：`x-cron-secret: $CRON_SECRET`
+
+若坚持 Root Directory = `services/api`，可改用该目录下的 `railway.toml`（Nixpacks），并清空自定义 `cd services/api && …` 构建命令。
 
 ## 前端对接
 

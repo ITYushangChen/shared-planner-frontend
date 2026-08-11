@@ -35,6 +35,19 @@ export async function assertSpaceMember(
   };
 }
 
+/** 当前用户加入的全部空间 id */
+export async function listUserSpaceIds(
+  admin: SupabaseClient,
+  userId: string,
+): Promise<string[]> {
+  const { data, error } = await admin
+    .from("space_members")
+    .select("space_id")
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return (data || []).map((r) => r.space_id as string);
+}
+
 export async function listSpaceMembers(
   admin: SupabaseClient,
   spaceId: string,

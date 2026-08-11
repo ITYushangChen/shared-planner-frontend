@@ -1,21 +1,30 @@
 import { Router } from "express";
 import { z } from "zod";
 import { chatJson } from "../lib/deepseek";
-import { assertSpaceMember, listSpaceMembers } from "../lib/space";
+import {
+  assertSpaceMember,
+  listSpaceMembers,
+  listUserSpaceIds,
+} from "../lib/space";
 import { createAdminClient } from "../lib/supabase";
 import type { AuthedRequest } from "../middleware/auth";
 import { requireAuth } from "../middleware/auth";
 import { checkConflicts, priorityWeight } from "../services/todos";
 
-const bodySchema = z.object({
-  space_id: z.string().uuid(),
-  text: z.string().optional(),
-  todo_ids: z.array(z.string().uuid()).optional(),
-  confirm: z.boolean().optional().default(false),
-  workday_start: z.string().optional().default("09:00"),
-  workday_end: z.string().optional().default("18:00"),
-  timezone: z.string().optional().default("Asia/Shanghai"),
-});
+const bodySchema = z
+  .object({
+    space_id: z.string().uuid().optional(),
+    all_spaces: z.boolean().optional().default(false),
+    text: z.string().optional(),
+    todo_ids: z.array(z.string().uuid()).optional(),
+    confirm: z.boolean().optional().default(false),
+    workday_start: z.string().optional().default("09:00"),
+    workday_end: z.string().optional().default("18:00"),
+    timezone: z.string().optional().default("Asia/Shanghai"),
+  })
+  .refine((d) => d.all_spaces || d.space_id, {
+    message: "需要 space_id 或 all_spaces",
+  });
 
 type Suggestion = {
   todo_id: string;
@@ -32,15 +41,44 @@ aiScheduleRouter.post("/schedule", requireAuth, async (req, res) => {
     const auth = (req as AuthedRequest).auth!;
     const body = bodySchema.parse(req.body);
     const admin = createAdminClient();
-    await assertSpaceMember(admin, body.space_id, auth.user.id);
-    const members = await listSpaceMembers(admin, body.space_id);
+
+    const spaceIds = body.all_spaces
+      ? await listUserSpaceIds(admin, auth.user.id)
+      : [body.space_id!];
+
+    if (spaceIds.length === 0) {
+      res.json({ suggestions: [], message: "没有可访问的空间" });
+      return;
+    }
+
+    if (!body.all_spaces) {
+      await assertSpaceMember(admin, body.space_id!, auth.user.id);
+    }
+
+    // 成员目录：单空间用该空间成员；全部空间合并去重
+    const memberMap = new Map<
+      string,
+      { user_id: string; display_name: string }
+    >();
+    for (const sid of spaceIds) {
+      const ms = await listSpaceMembers(admin, sid);
+      for (const m of ms) {
+        if (!memberMap.has(m.user_id)) {
+          memberMap.set(m.user_id, {
+            user_id: m.user_id,
+            display_name: m.display_name,
+          });
+        }
+      }
+    }
+    const members = [...memberMap.values()];
 
     let query = admin
       .from("todos")
       .select(
-        "id, title, description, priority, status, start_at, end_at, due_at, is_all_day, todo_assignees(user_id)",
+        "id, space_id, title, description, priority, status, start_at, end_at, due_at, is_all_day, todo_assignees(user_id)",
       )
-      .eq("space_id", body.space_id)
+      .in("space_id", spaceIds)
       .neq("status", "done");
 
     if (body.todo_ids?.length) {
@@ -58,13 +96,14 @@ aiScheduleRouter.post("/schedule", requireAuth, async (req, res) => {
 
     const { data: busy } = await admin
       .from("todos")
-      .select("id, title, start_at, end_at, todo_assignees(user_id)")
-      .eq("space_id", body.space_id)
+      .select("id, space_id, title, start_at, end_at, todo_assignees(user_id)")
+      .in("space_id", spaceIds)
       .neq("status", "done")
       .not("start_at", "is", null);
 
     const parsed = await chatJson<{ suggestions: Suggestion[] }>({
       system: `你是日程排期助手。根据未排期待办与成员已占用时段，给出不冲突的时间建议。
+可跨多个空间排期；同一指派人在任意空间的时段都不可重叠。
 只输出 JSON：
 {
   "suggestions": [
@@ -86,6 +125,7 @@ aiScheduleRouter.post("/schedule", requireAuth, async (req, res) => {
         timezone: body.timezone,
         workday_start: body.workday_start,
         workday_end: body.workday_end,
+        scope: body.all_spaces ? "all_spaces" : "single_space",
         request: body.text || "帮我安排未完成/未排期的任务",
         members: members.map((m) => ({
           id: m.user_id,
@@ -98,6 +138,7 @@ aiScheduleRouter.post("/schedule", requireAuth, async (req, res) => {
           )
           .map((t) => ({
             id: t.id,
+            space_id: t.space_id,
             title: t.title,
             priority: t.priority,
             due_at: t.due_at,
@@ -132,7 +173,7 @@ aiScheduleRouter.post("/schedule", requireAuth, async (req, res) => {
       for (const uid of assigneeIds) {
         const conflicts = await checkConflicts({
           admin,
-          spaceId: body.space_id,
+          spaceId: todo.space_id as string,
           userId: uid,
           startAt: s.start_at,
           endAt: s.end_at,
@@ -153,16 +194,16 @@ aiScheduleRouter.post("/schedule", requireAuth, async (req, res) => {
           is_all_day: false,
         })
         .eq("id", s.todo_id)
-        .eq("space_id", body.space_id);
+        .eq("space_id", todo.space_id);
       if (upErr) throw new Error(upErr.message);
       applied.push(s.todo_id);
     }
 
     await admin.from("ai_actions").insert({
-      space_id: body.space_id,
+      space_id: spaceIds[0],
       user_id: auth.user.id,
       action_type: "reschedule",
-      payload: { suggestions },
+      payload: { suggestions, all_spaces: body.all_spaces },
       result_todo_ids: applied,
       status: "applied",
     });

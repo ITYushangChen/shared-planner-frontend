@@ -69,12 +69,24 @@ async function buildSummaryForUser(params: {
 
   const text = await chatText({
     system:
-      "你是 ShareTodo 的每日摘要助手。用简洁中文写 2～4 句今日提醒，包含已排期事项与未排期提醒。不要用 Markdown 标题。",
+      "你是 ShareTodo 的每日摘要助手。用简洁中文写 2～4 句今日提醒。输入列表均为「指派给当前用户」的待办，必须逐条点名标题，不要遗漏已排期项；并提醒未排期任务。不要用 Markdown 标题。",
     user: JSON.stringify({
       local_date: localDate,
       timezone: params.timezone,
-      today_scheduled: today,
-      unscheduled_sample: unscheduled,
+      note: "以下任务均已指派给该用户，摘要必须覆盖",
+      today_scheduled: today.map((t) => ({
+        id: t.id,
+        title: t.title,
+        priority: t.priority,
+        start_at: t.start_at,
+        end_at: t.end_at,
+        due_at: t.due_at,
+      })),
+      unscheduled_assigned_to_me: unscheduled.map((t) => ({
+        id: t.id,
+        title: t.title,
+        priority: t.priority,
+      })),
     }),
   });
 
