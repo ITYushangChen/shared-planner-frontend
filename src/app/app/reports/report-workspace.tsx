@@ -683,6 +683,9 @@ function SpaceReportCard({
                               ? task.date_iso.slice(5).replace("-", "/")
                               : "待排期"}
                           </span>
+                          <span className="shrink-0 rounded bg-[var(--surface-muted)] px-1.5 py-0.5 text-[11px] text-[var(--text-muted)]">
+                            {task.department}
+                          </span>
                           {task.assignees.length > 0 ? (
                             <span className="shrink-0 text-xs text-[var(--text-muted)]">
                               {task.assignees.join("、")}

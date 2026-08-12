@@ -238,7 +238,7 @@ export async function buildReportXlsx(
     summaryHeader,
     [20, 15, 13, 53],
     tasks.map((task, idx) => [
-      { text: task.space_name, kind: idx % 2 ? "zebraCenter" : "center" },
+      { text: task.department || "通用", kind: idx % 2 ? "zebraCenter" : "center" },
       {
         text: categoryLabel(task.category),
         kind: idx % 2 ? "zebraCenter" : "center",
@@ -264,7 +264,7 @@ export async function buildReportXlsx(
     tasks.map((task, idx) => {
       const z = idx % 2 === 1;
       return [
-        { text: task.space_name, kind: z ? "zebraCenter" : "center" },
+        { text: task.department || "通用", kind: z ? "zebraCenter" : "center" },
         { text: categoryLabel(task.category), kind: z ? "zebraCenter" : "center" },
         { text: formatDayLabel(task.date_iso), kind: z ? "zebraCenter" : "center" },
         { text: plainLabel(task), kind: z ? "zebra" : "cell" },
@@ -289,7 +289,7 @@ export async function buildReportXlsx(
     planTasks.map((task, idx) => {
       const z = idx % 2 === 1;
       return [
-        { text: task.space_name, kind: z ? "zebraCenter" : "center" },
+        { text: task.department || "通用", kind: z ? "zebraCenter" : "center" },
         { text: categoryLabel(task.category), kind: z ? "zebraCenter" : "center" },
         { text: formatDayLabel(task.date_iso), kind: z ? "zebraCenter" : "center" },
         { text: plainLabel(task), kind: z ? "zebra" : "cell" },

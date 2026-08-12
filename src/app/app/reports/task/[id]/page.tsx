@@ -154,6 +154,12 @@ export default async function ReportTaskDetailPage({ params }: Props) {
                 {categoryLabel(category)}
               </dd>
             </div>
+            <div className="flex items-start gap-3">
+              <dt className="w-16 shrink-0 text-xs text-[var(--text-muted)]">
+                部门
+              </dt>
+              <dd className="text-[var(--brand-ink)]">{t.department || "通用"}</dd>
+            </div>
           </dl>
         </section>
       </div>

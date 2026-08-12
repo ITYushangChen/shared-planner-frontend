@@ -556,6 +556,8 @@ export type ReportTask = {
   status: ReportStatus;
   space_id: string;
   space_name: string;
+  /** 任务部门；未设置时为「通用」 */
+  department: string;
   /** 分类：按任务名称关键字，如 BUG / FEAT / OPTIMIZE / OTHER */
   category: string;
   /** 展示用时间，如 8/12 10:00~11:00、全天 8/12、完成于 8/12 */
@@ -949,6 +951,7 @@ export function buildReportData(args: {
       status,
       space_id: todo.space_id,
       space_name: spaceName,
+      department: todo.department || "通用",
       category: taskCategory(todo.title),
       time_label: labels.time_label,
       report_date_label: labels.report_date_label,
