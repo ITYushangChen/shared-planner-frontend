@@ -1,0 +1,11 @@
+# Deploy from repository root. Uses Dockerfile so Node/npm are always available.
+# In Railway dashboard you can leave Root Directory empty (repo root).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
