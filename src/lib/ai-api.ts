@@ -157,6 +157,22 @@ export type DailySummaryResult = {
   today_count: number;
 };
 
+export type PlainTaskInput = {
+  id: string;
+  title: string;
+  status?: string;
+  category?: string;
+};
+
+export type PlainTaskResult = {
+  items: Array<{ id: string; text: string }>;
+};
+
+/** AI 把任务名称改写成大白话、有结果导向的一句话（含“有什么用”） */
+export function plainTaskDescriptions(tasks: PlainTaskInput[]) {
+  return aiFetch<PlainTaskResult>("/ai/report-plain", { tasks });
+}
+
 export function createTodos(params: {
   space_id: string;
   text: string;

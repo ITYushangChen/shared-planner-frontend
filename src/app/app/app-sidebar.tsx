@@ -203,6 +203,8 @@ export function AppSidebar({
   }, [spaces, q]);
 
   const onOverview = pathname === "/app";
+  const onReports =
+    pathname === "/app/reports" || pathname.startsWith("/app/reports/");
   const onNotify = pathname === "/app/notifications";
   const onProfile = pathname === "/app/profile";
   const onSpaces = pathname.startsWith("/app/spaces");
@@ -415,6 +417,22 @@ export function AppSidebar({
           })}
         </div>
 
+        <div
+          className="mt-2 flex flex-col items-center gap-0.5 border-t border-white/15 pt-2"
+          role="group"
+          aria-label="报告"
+        >
+          <Link
+            href="/app/reports"
+            title="报告中心"
+            aria-label="报告中心"
+            prefetch
+            className={railIconClass(onReports)}
+          >
+            <span className="text-[11px] font-bold tracking-wide">报</span>
+          </Link>
+        </div>
+
         <div className="mt-auto flex flex-col items-center gap-0.5">
           <button
             type="button"
@@ -503,6 +521,16 @@ export function AppSidebar({
             <span className="block truncate font-medium">总览工作区</span>
             <span className="block text-[11px] text-[var(--text-muted)]">
               全部空间日程
+            </span>
+          </Link>
+          <Link
+            href="/app/reports"
+            prefetch
+            className={spaceNavClass(onReports)}
+          >
+            <span className="block truncate font-medium">报告中心</span>
+            <span className="block text-[11px] text-[var(--text-muted)]">
+              日报 · 周报 · 月报
             </span>
           </Link>
 
@@ -630,6 +658,8 @@ export function AppSidebar({
                 ? "消息"
                 : onProfile
                   ? "我的"
+                  : onReports
+                    ? "报告"
                   : "ShareTodo"}
         </p>
       </div>
@@ -743,6 +773,21 @@ export function AppSidebar({
                     }}
                   >
                     总览工作区
+                  </button>
+                  <button
+                    type="button"
+                    className={[
+                      "mb-2 w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold",
+                      onReports
+                        ? "bg-brand-soft text-brand"
+                        : "text-[var(--brand-ink)] hover:bg-[var(--surface-muted)]",
+                    ].join(" ")}
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      softPush("/app/reports");
+                    }}
+                  >
+                    报告中心
                   </button>
                   <input
                     type="search"
