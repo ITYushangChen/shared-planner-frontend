@@ -8,13 +8,13 @@ import {
   REPORT_TYPE_LABEL,
   REPORT_TYPE_ORDER,
   buildReportText,
-  buildReportXlsxXml,
   filterReportData,
   reportFileName,
   type ReportDataLike,
   type ReportTask,
   type ReportType,
 } from "@/lib/reports";
+import { buildReportXlsx } from "@/lib/report-xlsx";
 import {
   getOverviewBounds,
   localDateKey,
@@ -236,9 +236,11 @@ export function ReportWorkspace({
         plainMap = {};
       }
 
-      const xml = buildReportXlsxXml(filteredData, { taskPlainText: plainMap });
-      const blob = new Blob(["\uFEFF" + xml], {
-        type: "application/vnd.ms-excel;charset=utf-8",
+      const buffer = await buildReportXlsx(filteredData, {
+        taskPlainText: plainMap,
+      });
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

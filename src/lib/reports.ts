@@ -771,7 +771,7 @@ function formatMd(d: Date) {
 }
 
 /** Excel 用：日期只显示到天，如 08/11；无日期显示待排期 */
-function formatDayLabel(dateIso: string | null): string {
+export function formatDayLabel(dateIso: string | null): string {
   if (!dateIso) return "待排期";
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateIso);
   if (!m) return dateIso;
@@ -1099,13 +1099,13 @@ export function filterReportData(
   return { ...data, spaces, totals };
 }
 
-/** 导出文件名，如 周报_2026-08-10-2026-08-16.xls */
+/** 导出文件名，如 周报_2026-08-10-2026-08-16.xlsx */
 export function reportFileName(data: ReportDataLike): string {
   const base = REPORT_TYPE_LABEL[data.type];
   const range = data.rangeLabel
     .replace(/[/~]+/g, "-")
     .replace(/\s+/g, "");
-  return `${base}_${range}.xls`;
+  return `${base}_${range}.xlsx`;
 }
 
 function xmlEscape(s: string): string {
