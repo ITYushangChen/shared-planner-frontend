@@ -37,6 +37,7 @@ export async function insertTodosWithAssignees(params: {
         description: item.description ?? null,
         priority: item.priority || "medium",
         status: "todo" as TodoStatus,
+        department: "通用",
         start_at: item.start_at || null,
         end_at: item.end_at || null,
         due_at: item.due_at || null,
