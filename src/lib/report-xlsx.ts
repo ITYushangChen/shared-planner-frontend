@@ -133,7 +133,7 @@ type SheetCell = { text: string; kind: CellStyle; target?: string };
 /**
  * 生成带公司 Logo 的 .xlsx（Excel / WPS 可直接打开）。
  * 三个工作表：报告汇总 / 任务明细 / 下一周期计划，前 5 行为
- * Logo、标题、范围、空行、表头，数据从第 6 行开始。
+ * Logo、标题、表头，数据从第 4 行开始。
  */
 export async function buildReportXlsx(
   data: ReportDataLike,
@@ -142,7 +142,6 @@ export async function buildReportXlsx(
   const wb = await createWorkbook();
   const typeLabel = REPORT_TYPE_LABEL[data.type];
   const title = `《${typeLabel}》${data.rangeLabel}`;
-  const subtitle = `范围：${data.selectedSpacesLabel} · ${data.totals.total} 项任务（完成 ${data.totals.done} · 进行中 ${data.totals.in_progress} · 未开始 ${data.totals.todo}）`;
   const plainMap = opts?.taskPlainText ?? {};
   const plainLabel = (task: ReportTask) =>
     plainMap[task.id] ||
@@ -160,14 +159,13 @@ export async function buildReportXlsx(
   const addSheet = (
     name: string,
     sheetTitle: string,
-    sheetSubtitle: string,
     headers: string[],
     widths: number[],
     rows: SheetCell[][],
   ): void => {
     const ws: Worksheet = wb.addWorksheet(name);
     ws.columns = widths.map((w) => ({ width: w }));
-    ws.views = [{ state: "frozen", ySplit: 5, xSplit: 1 }];
+    ws.views = [{ state: "frozen", ySplit: 3, xSplit: 1 }];
     ws.pageSetup = {
       orientation: "landscape",
       fitToPage: true,
@@ -184,28 +182,21 @@ export async function buildReportXlsx(
 
     ws.getRow(1).height = 52;
     ws.getRow(2).height = 30;
-    ws.getRow(3).height = 18;
-    ws.getRow(4).height = 8;
-    ws.getRow(5).height = 24;
+    ws.getRow(3).height = 24;
 
     ws.mergeCells(2, 1, 2, headers.length);
     const titleCell = ws.getCell(2, 1);
     titleCell.value = sheetTitle;
     applyStyle(titleCell, "title");
 
-    ws.mergeCells(3, 1, 3, headers.length);
-    const subtitleCell = ws.getCell(3, 1);
-    subtitleCell.value = sheetSubtitle;
-    applyStyle(subtitleCell, "subtitle");
-
     headers.forEach((h, i) => {
-      const cell = ws.getCell(5, i + 1);
+      const cell = ws.getCell(3, i + 1);
       cell.value = h;
       applyStyle(cell, "header");
     });
 
     rows.forEach((cells, idx) => {
-      const r = 6 + idx;
+      const r = 4 + idx;
       ws.getRow(r).height = 20;
       cells.forEach((item, ci) => {
         const cell = ws.getCell(r, ci + 1);
@@ -234,7 +225,6 @@ export async function buildReportXlsx(
   addSheet(
     "报告汇总",
     title,
-    subtitle,
     summaryHeader,
     [20, 15, 13, 53],
     tasks.map((task, idx) => [
@@ -250,7 +240,7 @@ export async function buildReportXlsx(
       {
         text: plainLabel(task),
         kind: idx % 2 ? "zebraLink" : "link",
-        target: `任务明细!A${6 + idx}`,
+        target: `任务明细!A${4 + idx}`,
       },
     ]),
   );
@@ -258,7 +248,6 @@ export async function buildReportXlsx(
   addSheet(
     "任务明细",
     title,
-    subtitle,
     detailHeader,
     [20, 13, 13, 37, 28, 13, 20, 13, 40],
     tasks.map((task, idx) => {
@@ -283,7 +272,6 @@ export async function buildReportXlsx(
   addSheet(
     planSheetName,
     `《${typeLabel}》${data.rangeLabel} · ${planSheetName}`,
-    `计划任务 ${planTasks.length} 项（未开始）`,
     planHeader,
     [20, 15, 13, 43, 53],
     planTasks.map((task, idx) => {
