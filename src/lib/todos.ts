@@ -34,6 +34,8 @@ export type TodoRow = {
   duration_minutes?: number | null;
   /** 自定义展示/日历色 */
   color?: string | null;
+  /** 任务所属部门；未选择时为「通用」 */
+  department?: string | null;
   spaces: {
     id: string;
     name: string;
@@ -49,11 +51,11 @@ export type SpaceMemberOption = {
 };
 
 export const TODO_SELECT =
-  "id, title, description, priority, status, start_at, end_at, is_all_day, due_at, duration_minutes, space_id, creator_id, parent_todo_id, completed_by, completed_at, color, spaces(id, name, kind), todo_assignees(user_id, profiles(display_name, email))";
+  "id, title, description, priority, status, start_at, end_at, is_all_day, due_at, duration_minutes, department, space_id, creator_id, parent_todo_id, completed_by, completed_at, color, spaces(id, name, kind), todo_assignees(user_id, profiles(display_name, email))";
 
 /** 日历/首屏：去掉 description / 完成态 / email；编辑器打开时再拉详情 */
 export const TODO_SELECT_LEAN =
-  "id, title, priority, status, start_at, end_at, is_all_day, due_at, duration_minutes, space_id, creator_id, parent_todo_id, color, spaces(id, name, kind), todo_assignees(user_id, profiles(display_name))";
+  "id, title, priority, status, start_at, end_at, is_all_day, due_at, duration_minutes, department, space_id, creator_id, parent_todo_id, color, spaces(id, name, kind), todo_assignees(user_id, profiles(display_name))";
 
 export type SpaceNavItem = {
   id: string;

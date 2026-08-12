@@ -15,6 +15,7 @@ import {
   type SpaceNavItem,
   type TodoRow,
 } from "@/lib/todos";
+import { DEFAULT_DEPARTMENT, DEPARTMENT_OPTIONS } from "@/lib/departments";
 import { resolveTodoColor } from "@/lib/ui-prefs";
 import { useUiPrefsOptional } from "./ui-prefs-provider";
 
@@ -82,6 +83,7 @@ export function QuickCreateTodo({
   const [durationMin, setDurationMin] = useState(60);
   const [priority, setPriority] = useState<"high" | "low">(initialPriority);
   const [color, setColor] = useState("");
+  const [department, setDepartment] = useState<string>(DEFAULT_DEPARTMENT);
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -177,6 +179,7 @@ export function QuickCreateTodo({
       duration_minutes,
       space_id: resolvedSpaceId,
       creator_id: user.id,
+      department,
       color: color.trim() || null,
       spaces: spaceMeta
         ? { id: spaceMeta.id, name: spaceMeta.name, kind: spaceMeta.kind }
@@ -195,6 +198,7 @@ export function QuickCreateTodo({
     setDurationMin(60);
     setAssigneeIds([]);
     setColor("");
+    setDepartment(DEFAULT_DEPARTMENT);
     setLoading(false);
     setMsg("");
     onCreated?.();
@@ -211,6 +215,7 @@ export function QuickCreateTodo({
       end_at,
       is_all_day: isAllDay,
       duration_minutes,
+      department,
       source: "manual",
     });
 
@@ -277,6 +282,20 @@ export function QuickCreateTodo({
           {spaces.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="text-xs text-zinc-500">
+        部门
+        <select
+          className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none"
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
+        >
+          {DEPARTMENT_OPTIONS.map((d) => (
+            <option key={d} value={d}>
+              {d}
             </option>
           ))}
         </select>

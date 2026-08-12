@@ -54,6 +54,7 @@ import {
 import { hexToRgba, resolveTaskOpacity } from "@/lib/ui-prefs";
 import { chipClass } from "./ui-btn-class";
 import { useUiPrefsOptional } from "./ui-prefs-provider";
+import { DEFAULT_DEPARTMENT } from "@/lib/departments";
 
 const FC_PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
 
@@ -502,6 +503,7 @@ export function TodosCalendar({
         title: `${todo.title}（副本）`,
         description: todo.description,
         priority: todo.priority,
+        department: todo.department ?? DEFAULT_DEPARTMENT,
         status: "todo",
         start_at,
         end_at,

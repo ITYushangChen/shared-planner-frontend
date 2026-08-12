@@ -15,6 +15,7 @@ import {
   type TodoRow,
 } from "@/lib/todos";
 import { resolveTodoColor } from "@/lib/ui-prefs";
+import { DEFAULT_DEPARTMENT, DEPARTMENT_OPTIONS } from "@/lib/departments";
 import { TodoComments } from "./todo-comments";
 import { useUiPrefsOptional } from "./ui-prefs-provider";
 
@@ -57,6 +58,9 @@ export function TodoEditor({
   const [description, setDescription] = useState(todo.description ?? "");
   const [priority, setPriority] = useState(todo.priority);
   const [color, setColor] = useState(todo.color ?? "");
+  const [department, setDepartment] = useState(
+    todo.department ?? DEFAULT_DEPARTMENT,
+  );
   const [status, setStatus] = useState(todo.status);
   const previewColor = resolveTodoColor(
     color.trim() || null,
@@ -81,6 +85,7 @@ export function TodoEditor({
     setDescription(todo.description ?? "");
     setPriority(todo.priority);
     setColor(todo.color ?? "");
+    setDepartment(todo.department ?? DEFAULT_DEPARTMENT);
     setStatus(todo.status);
     setIsAllDay(todo.is_all_day);
     setStartLocal(toLocalInput(todo.start_at));
@@ -180,6 +185,7 @@ export function TodoEditor({
       priority,
       color: color.trim() || null,
       status,
+      department,
       is_all_day: isAllDay,
       start_at,
       end_at,
@@ -227,6 +233,7 @@ export function TodoEditor({
       priority,
       color: color.trim() || null,
       status,
+      department,
       is_all_day: isAllDay,
       start_at,
       end_at,
@@ -289,6 +296,7 @@ export function TodoEditor({
           title: `${title.trim() || todo.title}（段${i + 1}）`,
           description: description.trim() || todo.description,
           priority,
+          department: todo.department ?? DEFAULT_DEPARTMENT,
           status: "todo",
           start_at: segStart.toISOString(),
           end_at: segEnd.toISOString(),
@@ -473,6 +481,21 @@ export function TodoEditor({
               </select>
             </label>
           </div>
+
+          <label className="text-sm text-zinc-700">
+            部门
+            <select
+              className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+            >
+              {DEPARTMENT_OPTIONS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <div className="flex flex-wrap items-end gap-2">
             <label className="min-w-0 flex-1 text-sm text-zinc-700">
